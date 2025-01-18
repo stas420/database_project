@@ -1,0 +1,6 @@
+- [ ] research regarding ***payment card information storing*** and payment processing:
+	- what information should ***our*** database store, to run card payments?
+- [ ] provide a way to store all clients' transactions
+- [ ] add ***all_cars***, ***available_cars*** tables
+- [ ] add diagrams
+- [ ] add lifecycle ????
