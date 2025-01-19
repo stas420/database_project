@@ -4,53 +4,46 @@
     "type": "split",
     "children": [
       {
-        "id": "ffd3f0f2e9deee6f",
+        "id": "ea9e2572f5ece64c",
         "type": "tabs",
+        "dimension": 46.833130328867234,
         "children": [
           {
-            "id": "9371b85903dd7332",
+            "id": "38cb3d458fe78295",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/Overview.md",
+                "file": "docs/Tables/vehicles.md",
                 "mode": "preview",
                 "source": true
               },
               "icon": "lucide-file",
-              "title": "Overview"
+              "title": "vehicles"
             }
-          },
+          }
+        ]
+      },
+      {
+        "id": "631f59c577d14887",
+        "type": "tabs",
+        "dimension": 53.166869671132766,
+        "children": [
           {
-            "id": "2661094f43aafda1",
+            "id": "b0826fdfec062a45",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
                 "file": "docs/Tables List.md",
-                "mode": "source",
+                "mode": "preview",
                 "source": true
               },
               "icon": "lucide-file",
               "title": "Tables List"
             }
-          },
-          {
-            "id": "210094152fb45e44",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "docs/TODO list.md",
-                "mode": "preview",
-                "source": true
-              },
-              "icon": "lucide-file",
-              "title": "TODO list"
-            }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -191,17 +184,24 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "210094152fb45e44",
+  "active": "b0826fdfec062a45",
   "lastOpenFiles": [
-    "docs/Tables List.md",
+    "docs/System's requirements.md",
     "docs/Overview.md",
-    "docs/Tables/clients.md",
-    "docs/Tables/available_cars.md",
-    "docs/Tables/all_cars.md",
-    "docs/Tables/cars.md",
-    "docs/TODO list.md",
-    "New Text Document.txt",
+    "docs/Tables List.md",
     "README.md",
+    "docs/TODO list.md",
+    "docs/note_attachments/database_structure.png",
+    "docs/note_attachments/db_project.drawio1.png",
+    "docs/note_attachments",
+    "docs/Tables/vehicles.md",
+    "docs/Tables/vehicle_models.md",
+    "docs/Tables/clients.md",
+    "docs/Tables/rentals.md",
+    "docs/Tables/all_cars.md",
+    "docs/Tables/available_cars.md",
+    "docs/Tables/cars.md",
+    "New Text Document.txt",
     "docs/Tables",
     "docs"
   ]

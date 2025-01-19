@@ -1,6 +1,11 @@
+- [ ] add descriptions to all tables documents
 - [ ] research regarding ***payment card information storing*** and payment processing:
 	- what information should ***our*** database store, to run card payments?
-- [ ] provide a way to store all clients' transactions
-- [ ] add ***all_cars***, ***available_cars*** tables
+- [x] provide a way to store all clients' transactions
+	- *rentals*
+- [x] add ***all_cars***, ***available_cars*** tables
+	- *vehicles* and *vehicle_models* + *rentals* 
+- [x] requirements engineering
 - [ ] add diagrams
-- [ ] add lifecycle ????
+	- one, with tables, is done, we need the rest, i.e. user's point of view, app's point of view
+- [ ] whole lifecycle
