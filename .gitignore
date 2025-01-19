@@ -1,1 +1,2 @@
-.obsidian
+.obsidian/*
+!.obsidian/core-plugins.json
