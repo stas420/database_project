@@ -1,0 +1,309 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: clients; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+CREATE TABLE clients (
+    client_id character(32) NOT NULL,
+    email text NOT NULL,
+    drivers_license_number text NOT NULL,
+    email_verified boolean NOT NULL,
+    password_hash text NOT NULL,
+    forename text NOT NULL,
+    surname text NOT NULL,
+    birth_date date NOT NULL,
+    account_created timestamp without time zone NOT NULL,
+    account_last_accessed timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.clients OWNER TO pmlodkow;
+
+--
+-- Name: rentals; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+CREATE TABLE rentals (
+    rental_id character(32) NOT NULL,
+    client_id character(32) NOT NULL,
+    vehicle_id character(32) NOT NULL,
+    start_time timestamp without time zone NOT NULL,
+    start_latitude numeric(9,6) NOT NULL,
+    start_longitude numeric(9,6) NOT NULL,
+    end_time timestamp without time zone,
+    end_latitude numeric(9,6),
+    end_longitude numeric(9,6),
+    rental_type text NOT NULL,
+    charge numeric(7,2) NOT NULL,
+    is_paid boolean DEFAULT false NOT NULL,
+    CONSTRAINT rentals_charge_check CHECK ((charge >= (0)::numeric))
+);
+
+
+ALTER TABLE public.rentals OWNER TO pmlodkow;
+
+--
+-- Name: vehicle_models; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+CREATE TABLE vehicle_models (
+    model_id character(32) NOT NULL,
+    brand_name text NOT NULL,
+    model_name text NOT NULL,
+    price_per_day numeric(5,2) NOT NULL,
+    price_for_no_limits numeric(6,2) NOT NULL,
+    price_per_minute numeric(4,2) NOT NULL,
+    price_per_kilometer numeric(4,2) NOT NULL,
+    date_created date NOT NULL,
+    date_last_updated date NOT NULL
+);
+
+
+ALTER TABLE public.vehicle_models OWNER TO pmlodkow;
+
+--
+-- Name: vehicles; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+CREATE TABLE vehicles (
+    vehicle_id character(32) NOT NULL,
+    model_id character(32) NOT NULL,
+    current_renter_id character(32),
+    vehicle_color text NOT NULL,
+    license_plate text NOT NULL,
+    condition text NOT NULL,
+    latitude numeric(9,6) NOT NULL,
+    longitude numeric(9,6) NOT NULL,
+    mileage integer NOT NULL,
+    record_created date NOT NULL,
+    last_rented timestamp without time zone,
+    last_renter_id character(32),
+    CONSTRAINT vehicles_mileage_check CHECK ((mileage >= 0))
+);
+
+
+ALTER TABLE public.vehicles OWNER TO pmlodkow;
+
+--
+-- Data for Name: clients; Type: TABLE DATA; Schema: public; Owner: pmlodkow
+--
+
+COPY clients (client_id, email, drivers_license_number, email_verified, password_hash, forename, surname, birth_date, account_created, account_last_accessed) FROM stdin;
+123e4567e89b12d3a456426655440005	john.doe@example.com	D12345678	t	$2a$12$examplehash1234567890abcd	John	Doe	1990-05-15	2025-01-01 08:00:00	2025-01-17 10:00:00
+123e4567e89b12d3a456426655440006	jane.smith@example.com	S87654321	t	$2a$12$examplehash0987654321zyxw	Jane	Smith	1985-07-20	2025-01-02 09:00:00	2025-01-16 14:00:00
+123e4567e89b12d3a456426655440007	alex.jones@example.com	J56789012	f	$2a$12$anotherexamplehash1234567	Alex	Jones	1992-03-10	2025-01-03 10:30:00	2025-01-15 16:45:00
+\.
+
+
+--
+-- Data for Name: rentals; Type: TABLE DATA; Schema: public; Owner: pmlodkow
+--
+
+COPY rentals (rental_id, client_id, vehicle_id, start_time, start_latitude, start_longitude, end_time, end_latitude, end_longitude, rental_type, charge, is_paid) FROM stdin;
+rental_001                      	123e4567e89b12d3a456426655440005	123e4567e89b12d3a456426655440000	2025-01-17 09:00:00	40.712776	-74.005974	2025-01-17 11:00:00	40.712776	-74.005974	hourly	30.00	t
+rental_002                      	123e4567e89b12d3a456426655440006	123e4567e89b12d3a456426655440001	2025-01-16 08:00:00	34.052235	-118.243683	2025-01-17 08:00:00	34.052235	-118.243683	daily	100.00	f
+rental_003                      	123e4567e89b12d3a456426655440007	123e4567e89b12d3a456426655440003	2025-01-17 12:00:00	40.730610	-73.935242	2025-01-17 13:30:00	40.730610	-73.935242	hourly	45.00	t
+\.
+
+
+--
+-- Data for Name: vehicle_models; Type: TABLE DATA; Schema: public; Owner: pmlodkow
+--
+
+COPY vehicle_models (model_id, brand_name, model_name, price_per_day, price_for_no_limits, price_per_minute, price_per_kilometer, date_created, date_last_updated) FROM stdin;
+123e4567e89b12d3a456426655440010	Tesla	Model S	120.00	1800.00	0.85	0.30	2025-01-10	2025-01-15
+123e4567e89b12d3a456426655440011	Chevrolet	Bolt EV	60.00	800.00	0.60	0.25	2025-01-08	2025-01-15
+123e4567e89b12d3a456426655440012	BMW	i3	100.00	1500.00	0.75	0.28	2025-01-05	2025-01-15
+123e4567e89b12d3a456426655440013	Nissan	Leaf	50.00	700.00	0.55	0.20	2025-01-06	2025-01-15
+123e4567e89b12d3a456426655440014	Ford	Mustang Mach-E	80.00	1200.00	0.70	0.26	2025-01-09	2025-01-15
+\.
+
+
+--
+-- Data for Name: vehicles; Type: TABLE DATA; Schema: public; Owner: pmlodkow
+--
+
+COPY vehicles (vehicle_id, model_id, current_renter_id, vehicle_color, license_plate, condition, latitude, longitude, mileage, record_created, last_rented, last_renter_id) FROM stdin;
+123e4567e89b12d3a456426655440000	123e4567e89b12d3a456426655440011	\N	Red	ABC1234	Excellent	40.712776	-74.005974	12000	2025-01-10	2025-01-15 08:30:00	123e4567e89b12d3a456426655440005
+123e4567e89b12d3a456426655440001	123e4567e89b12d3a456426655440011	123e4567e89b12d3a456426655440006	Blue	DEF5678	Good	34.052235	-118.243683	8000	2025-01-08	2025-01-16 09:00:00	123e4567e89b12d3a456426655440006
+123e4567e89b12d3a456426655440002	123e4567e89b12d3a456426655440011	\N	White	GHI9012	Fair	51.507351	-0.127758	15000	2025-01-05	\N	\N
+123e4567e89b12d3a456426655440003	123e4567e89b12d3a456426655440011	123e4567e89b12d3a456426655440007	Black	JKL3456	Very Good	40.730610	-73.935242	5000	2025-01-06	2025-01-17 14:45:00	123e4567e89b12d3a456426655440007
+123e4567e89b12d3a456426655440004	123e4567e89b12d3a456426655440011	\N	Silver	MNO7890	Good	34.101235	-118.308846	10000	2025-01-09	\N	\N
+\.
+
+
+--
+-- Name: clients_email_key; Type: CONSTRAINT; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+ALTER TABLE ONLY clients
+    ADD CONSTRAINT clients_email_key UNIQUE (email);
+
+
+--
+-- Name: clients_pkey; Type: CONSTRAINT; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+ALTER TABLE ONLY clients
+    ADD CONSTRAINT clients_pkey PRIMARY KEY (client_id);
+
+
+--
+-- Name: rentals_pkey; Type: CONSTRAINT; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+ALTER TABLE ONLY rentals
+    ADD CONSTRAINT rentals_pkey PRIMARY KEY (rental_id);
+
+
+--
+-- Name: vehicle_models_pkey; Type: CONSTRAINT; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+ALTER TABLE ONLY vehicle_models
+    ADD CONSTRAINT vehicle_models_pkey PRIMARY KEY (model_id);
+
+
+--
+-- Name: vehicles_license_plate_key; Type: CONSTRAINT; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+ALTER TABLE ONLY vehicles
+    ADD CONSTRAINT vehicles_license_plate_key UNIQUE (license_plate);
+
+
+--
+-- Name: vehicles_pkey; Type: CONSTRAINT; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+ALTER TABLE ONLY vehicles
+    ADD CONSTRAINT vehicles_pkey PRIMARY KEY (vehicle_id);
+
+
+--
+-- Name: rentals_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pmlodkow
+--
+
+ALTER TABLE ONLY rentals
+    ADD CONSTRAINT rentals_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(client_id);
+
+
+--
+-- Name: rentals_vehicle_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pmlodkow
+--
+
+ALTER TABLE ONLY rentals
+    ADD CONSTRAINT rentals_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id);
+
+
+--
+-- Name: vehicles_current_renter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pmlodkow
+--
+
+ALTER TABLE ONLY vehicles
+    ADD CONSTRAINT vehicles_current_renter_id_fkey FOREIGN KEY (current_renter_id) REFERENCES clients(client_id);
+
+
+--
+-- Name: vehicles_last_renter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pmlodkow
+--
+
+ALTER TABLE ONLY vehicles
+    ADD CONSTRAINT vehicles_last_renter_id_fkey FOREIGN KEY (last_renter_id) REFERENCES clients(client_id);
+
+
+--
+-- Name: vehicles_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pmlodkow
+--
+
+ALTER TABLE ONLY vehicles
+    ADD CONSTRAINT vehicles_model_id_fkey FOREIGN KEY (model_id) REFERENCES vehicle_models(model_id);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- Name: clients; Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+REVOKE ALL ON TABLE clients FROM PUBLIC;
+REVOKE ALL ON TABLE clients FROM pmlodkow;
+GRANT ALL ON TABLE clients TO pmlodkow;
+GRANT ALL ON TABLE clients TO sniemcze;
+GRANT ALL ON TABLE clients TO abrzykcy;
+
+
+--
+-- Name: rentals; Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+REVOKE ALL ON TABLE rentals FROM PUBLIC;
+REVOKE ALL ON TABLE rentals FROM pmlodkow;
+GRANT ALL ON TABLE rentals TO pmlodkow;
+GRANT ALL ON TABLE rentals TO sniemcze;
+GRANT ALL ON TABLE rentals TO abrzykcy;
+
+
+--
+-- Name: vehicle_models; Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+REVOKE ALL ON TABLE vehicle_models FROM PUBLIC;
+REVOKE ALL ON TABLE vehicle_models FROM pmlodkow;
+GRANT ALL ON TABLE vehicle_models TO pmlodkow;
+GRANT ALL ON TABLE vehicle_models TO abrzykcy;
+GRANT ALL ON TABLE vehicle_models TO sniemcze;
+
+
+--
+-- Name: vehicles; Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+REVOKE ALL ON TABLE vehicles FROM PUBLIC;
+REVOKE ALL ON TABLE vehicles FROM pmlodkow;
+GRANT ALL ON TABLE vehicles TO pmlodkow;
+GRANT ALL ON TABLE vehicles TO sniemcze;
+GRANT ALL ON TABLE vehicles TO abrzykcy;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
