@@ -6,3 +6,5 @@ ___
 - Stanisław Niemczewski: <sniemczewski@student.agh.edu.pl>
 
 This project is to provide a database system for an external application, which as a whole provides a service inspired by **Traficar** - convenient, short-term car renting.
+
+To start reading about the project, please open ```/docs/Overview``` file.

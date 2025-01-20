@@ -4,8 +4,6 @@ The company, which would run a service similar to **Traficar**, needs *vehicles 
 
 In this project, we focus on the last of these - a database system.
 
-==diagram of user interaction==
-
 From company's point of view, needed resources are:
 - *vehicles* to rent, with all needed legal and security actions taken;
 - ***database*** storing:
@@ -18,6 +16,10 @@ From company's point of view, needed resources are:
 	- it should allow the company to automate renting system and control current state of their vehicles;
 	- also, it should give access to client's information for the company's data administrators.
 
-==diagram of sys admins interactions==
+![[user_interaction.png]]
+*Fig. 1 - user interaction and request diagram* (```/docs/note_attachments/user_interaction.png```)
 
-Database is relational and organised in tables, as described in *docs/[[Tables List]]* document.
+![[backend_interaction.png]]
+*Fig. 2 - backend database operations processing diagram* (```/docs/note_attachments/backend_interaction.png```)
+
+Database is relational and organised in tables, as described in *docs/[[Tables List]]* document. Each table handles a set of function calls, which provide a convenient and safe way to automate the most-frequently used administration tasks, for both backend API and system administrators. 
