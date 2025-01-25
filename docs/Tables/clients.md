@@ -15,16 +15,22 @@ The *clients* table consists of registered clients, with required information:
 
 ### functionalities
 
-- ***addUser*** (TEXT **email**, TEXT **name**, TEXT **surname**, DATE(DD-MM-YYYY) **birthDate**):
+- ***addUser*** (TEXT **email**, TEXT **name**, TEXT **surname**, DATE(DD-MM-YYYY) **birthDate**) $\rightarrow$ BOOLEAN:
 	- adds user record to this table
-- ***userAuthorized*** (TEXT **email**)
+	- returns TRUE if user was successfully added, and FALSE if any argument is invalid/ill-formed, or the user with given email already exists
+- ***userAuthorized*** (TEXT **email**) $\rightarrow$ BOOLEAN
 	- triggers database to refresh *accountLastAccess* field
-- ***emailVerified*** (TEXT **email**):
+	- returns FALSE if user with given email was not found, TRUE otherwise
+- ***emailVerified*** (TEXT **email**) $\rightarrow$ BOOLEAN:
 	- toggles email verification state to *true*, which gives access to app's service
-- ***emailNotVerified*** (TEXT **email**):
+	- returns FALSE if user with given email was not found, TRUE otherwise
+- ***emailNotVerified*** (TEXT **email**) $\rightarrow$ BOOLEAN:
 	- toggles email verification state to *false*, which denied access to app's service
 	- may be used when user wants to change their email
-- ***removeUser*** (TEXT **email**):
+	- returns FALSE if user with given email was not found, TRUE otherwise
+- ***removeUser*** (TEXT **email**) $\rightarrow$ BOOLEAN:
 	- removes user record from this table, per given email
-- ***getUserInfo*** ()
+	- returns FALSE if user with given email was not found, TRUE otherwise
+- ***getUserInfo*** (TEXT **email**) $\rightarrow$ BOOLEAN or TEXT:
 	- returns all of user's data as a *string in JSON format*
+	- if user with given email was not found, returns FALSE

@@ -19,19 +19,22 @@ The *vehicles* table contains information about individual vehicles available fo
 
 ### functionalities
 
-- ***addVehicle*** (CHAR(32) **vehicleID**, CHAR(32) **modelID**, TEXT **vehicleColor**, TEXT **licensePlate**, TEXT **condition**, DECIMAL(9,6) **latitude**, DECIMAL(9,6) **longitude**, INT **mileage**):
-  - Adds a new vehicle record to the table.
+- ***addVehicle*** (CHAR(32) **vehicleID**, CHAR(32) **modelID**, TEXT **vehicleColor**, TEXT **licensePlate**, TEXT **condition**, DECIMAL(9,6) **latitude**, DECIMAL(9,6) **longitude**, INT **mileage**) $\rightarrow$ BOOLEAN:
+  - Adds a new vehicle record to the table
+  - returns FALSE if provided vehicle ID already exists in the table, if provided model ID does not already exist in *vehicle_models*, or if any other argument is invalid/ill-formed; performs insert and returns TRUE otherwise
   
-- ***updateVehicleStatus*** (CHAR(32) **vehicleID**, DECIMAL(9,6) **latitude**, DECIMAL(9,6) **longitude**, TEXT **condition**, INT **mileage**):
-  - Updates the location, condition, and mileage of a vehicle.
+- ***updateVehicleStatus*** (CHAR(32) **vehicleID**, DECIMAL(9,6) **latitude**, DECIMAL(9,6) **longitude**, TEXT **condition**, INT **mileage**) $\rightarrow$ BOOLEAN:
+  - Updates the location, condition, and mileage of a vehicle
+  - returns FALSE if any argument is malformed or if vehicle ID does not exist, TRUE otherwise and if UPDATE is successful
   
-- ***assignRenter*** (CHAR(32) **vehicleID**, CHAR(32) **currentRenterID**):
-  - Assigns a renter to a vehicle, marking it as currently rented.
+- ***assignRenter*** (CHAR(32) **vehicleID**, CHAR(32) **currentRenterID**) $\rightarrow$ BOOLEAN:
+  - Assigns a renter to a vehicle, marking it as currently rented, updates *lastRented* field
+  - returns FALSE if both vehicle ID and current renter ID are either malformed or non-existent, TRUE otherwise
+- ***removeRenter*** (CHAR(32) **vehicleID**) $\rightarrow$ BOOLEAN:
+  - Clears the current renter field, marking the vehicle as available
+  - assigns current renter ID to last renter ID, then assigns NULL to current renter ID, finally refreshes the *lastRented* timestamp
   
-- ***removeRenter*** (CHAR(32) **vehicleID**):
-  - Clears the current renter field, marking the vehicle as available.
-  
-- ***getVehicleDetails*** (CHAR(32) **vehicleID**):
+- ***getVehicleInfo*** (CHAR(32) **vehicleID**):
   - Retrieves all details for a specific vehicle as a JSON-formatted string.
   
 - ***listAvailableVehicles*** ():
