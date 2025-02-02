@@ -19,20 +19,20 @@ The *rentals* table records details about vehicle rentals, including the renter,
 
 ### functionalities
 
-- ***create_rental*** (CHAR(32) **rental_id**, CHAR(32) **client_id**, CHAR(32) **vehicleID**, TIMESTAMP **start_time**, DECIMAL(9,6) **start_latitude**, DECIMAL(9,6) **start_longitude**, TEXT **rental_type**):
+- ***create_rental*** (CHAR(32) **rental_id**, CHAR(32) **client_id**, CHAR(32) **vehicleID**, TIMESTAMP **start_time**, DECIMAL(9,6) **start_latitude**, DECIMAL(9,6) **start_longitude**, TEXT **rental_type**) $\rightarrow$  BOOLEAN:
   - Creates a new rental record in the table with the specified details.
   
-- ***end_rental*** (CHAR(32) **rental_id**, TIMESTAMP **end_time**, DECIMAL(9,6) **end_latitude**, DECIMAL(9,6) **end_longitude**, DECIMAL(7,2) **charge**):
+- ***end_rental*** (CHAR(32) **rental_id**, TIMESTAMP **end_time**, DECIMAL(9,6) **end_latitude**, DECIMAL(9,6) **end_longitude**, DECIMAL(7,2) **charge**) $\rightarrow$  BOOLEAN:
   - Updates the rental record with the end time, end location, and calculated rental charge.
   
-- ***mark_as_paid*** (CHAR(32) **rental_id**):
+- ***mark_rental_as_paid*** (CHAR(32) **rental_id**)  $\rightarrow$  BOOLEAN:
   - Marks the rental as paid by setting the *is_paid* field to `true`.
   
-- ***get_rental_details*** (CHAR(32) **rental_id**):
+- ***get_rental_details*** (CHAR(32) **rental_id**) $\rightarrow$  TEXT:
   - Retrieves all details for a specific rental as a JSON-formatted string.
   
-- ***list_active_rentals*** ():
+- ***list_active_rentals*** () $\rightarrow$  TABLE:
   - Returns a list of all ongoing rentals (i.e., rentals where *end_time* is `NULL`).
   
-- ***list_rentals_by_client*** (CHAR(32) **client_id**):
+- ***list_rentals_by_client*** (CHAR(32) **client_id**) SETOF rentals:
   - Returns a list of all rentals associated with a specific renter.

@@ -10,7 +10,7 @@ This project is to provide a database system for an external application, which 
 
 The company, which would run such service, would provide *legal*, *ready-to-go*, *fully fuelled* cars, with *valid insurance*, which shall also be properly tagged (with QR codes, for example).
 
-Clients **must** be *over 18 years old*, *must have a valid driver's license* and need to ==provide their *payment card details* in the app==[^1].
+Clients **must** be *over 18 years old*, *must have a valid driver's license*.
 
 From the client's point of view, everything should look as follows:
 1. (*If not already registered*) Register to the system through an app;
@@ -44,6 +44,3 @@ PostgreSQL 9.2.24 on x86_64-redhat-linux-gnu, compiled by gcc (GCC) 4.8.5 201506
 - [Obsidian](https://obsidian.md) desktop application for making Markdown notes.
 
 The work is *organised evenly*, i.e. each of team members contributes to *every part* of the project: planning, documentation, running administrative database queries, writing functionalities and testing. We trust each other, as a team (to some extent). 
-
-
-[^1]: Do we need card information, or some kind of other info to process payments?

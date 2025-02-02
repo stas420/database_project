@@ -9,4 +9,4 @@ Every file enlisted below is available in ```/docs``` directory.
 - database dump in our [github repository](https://github.com/stas420/database_project/blob/main/database_dump) along with commit history
 
 # Testing
-- ==to be added==
+- [[Manual tests]]

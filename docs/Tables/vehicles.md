@@ -34,8 +34,6 @@ The *vehicles* table contains information about individual vehicles available fo
   - Clears the current renter field, marking the vehicle as available
   - assigns current renter ID to last renter ID, then assigns NULL to current renter ID, finally refreshes the *last_rented* timestamp
   
-- ***get_vehicle_info*** (CHAR(32) **vehicle_id**):
+- ***get_vehicle_info*** (CHAR(32) **vehicle_id**) $\rightarrow$ TEXT:
   - Retrieves all details for a specific vehicle as a JSON-formatted string.
   
-- ***list_available_vehicles*** ():
-  - Returns a list of all vehicles that are not currently rented.

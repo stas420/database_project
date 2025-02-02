@@ -33,5 +33,3 @@ The *vehicleModels* table stores information about various vehicle models and th
   - Retrieves all details for a specific vehicle model as a JSON-formatted string.
   - returns FALSE if provided *model_id* does not already exist in table
   
-- ***listAllVehicleModels*** ():
-  - Returns a list of all vehicle models stored in the table
