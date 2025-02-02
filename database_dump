@@ -24,29 +24,431 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 SET search_path = public, pg_catalog;
 
+--
+-- Name: clients_add_user(text, text, text, text, text, text, date); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION clients_add_user(p_client_id text, p_email text, p_forename text, p_surname text, p_drivers_license_number text, p_password_hash text, p_birth_date date) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $_$
+BEGIN
+  IF p_email IS NULL OR (LENGTH(TRIM(p_email)) < 5) THEN
+    RAISE NOTICE 'clients_add_user | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  IF p_drivers_license_number IS NULL OR LENGTH(TRIM(p_drivers_license_number)) < 1 THEN
+    RAISE NOTICE 'clients_add_user | Invalid drivers license';
+    RETURN FALSE;
+  END IF;
+
+  IF NOT (p_email ~ '^[A-Za-z0-9._%+~]+@[A-Za-z0-9.~]+\.[A-Za-z]{2,}$') THEN
+    RAISE NOTICE 'clients_add_user | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  IF p_forename IS NULL OR LENGTH(TRIM(p_forename)) < 1 THEN
+    RAISE NOTICE 'clients_add_user | Invalid forename';
+    RETURN FALSE;
+  END IF;
+
+  IF p_surname IS NULL OR LENGTH(TRIM(p_surname)) < 1 THEN
+    RAISE NOTICE 'clients_add_user | Invalid surname';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_birth_date IS NULL) OR (p_birth_date > (CURRENT_DATE - INTERVAL '18 years')) THEN
+    RAISE NOTICE 'clients_add_user | Invalid birth date';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    INSERT INTO clients (
+      client_id,
+      email,
+      drivers_license_number,
+      email_verified,
+      password_hash,
+      forename,
+      surname,
+      birth_date,
+      account_created,
+      account_last_accessed
+    ) VALUES (
+       p_client_id,
+       p_email,
+       p_drivers_license_number,
+       FALSE,
+       p_password_hash,
+       p_forename,
+       p_surname,
+       p_birth_date,
+       CURRENT_TIMESTAMP, -- Set account_created to the current time
+       CURRENT_TIMESTAMP  -- Set account_last_accessed to the current time
+    );
+  EXCEPTION WHEN unique_violation THEN
+    RAISE NOTICE 'clients_add_user | email already exists: %', p_email;
+    RETURN FALSE;
+  END;
+
+  RETURN TRUE;
+END;
+$_$;
+
+
+ALTER FUNCTION public.clients_add_user(p_client_id text, p_email text, p_forename text, p_surname text, p_drivers_license_number text, p_password_hash text, p_birth_date date) OWNER TO sniemcze;
+
+--
+-- Name: clients_email_not_verified(text); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION clients_email_not_verified(p_email text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p_email IS NULL OR (LENGTH(TRIM(p_email)) < 5) THEN
+    RAISE NOTICE 'clients_email_not_verified | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    UPDATE clients
+    SET email_verified = FALSE
+    WHERE email = p_email;
+
+    IF NOT FOUND THEN
+      RAISE NOTICE 'clients_email_not_verified | email does not exist: %', p_email;
+      RETURN FALSE;
+    END IF;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.clients_email_not_verified(p_email text) OWNER TO sniemcze;
+
+--
+-- Name: clients_email_verified(text); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION clients_email_verified(p_email text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p_email IS NULL OR (LENGTH(TRIM(p_email)) < 5) THEN
+    RAISE NOTICE 'clients_email_verified | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    UPDATE clients
+    SET email_verified = TRUE
+    WHERE email = p_email;
+
+    IF NOT FOUND THEN
+      RAISE NOTICE 'clients_email_verified | email does not exist: %', p_email;
+      RETURN FALSE;
+    END IF;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.clients_email_verified(p_email text) OWNER TO sniemcze;
+
+--
+-- Name: clients_get_user_info(text); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION clients_get_user_info(p_email text) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result TEXT;
+BEGIN
+  IF p_email IS NULL OR (LENGTH(TRIM(p_email)) < 5) THEN
+    RAISE NOTICE 'clients_remove_user | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    SELECT CONCAT(
+      '{',
+        '"client_id": "', client_id, '", ',
+        '"email": "', email, '", ',
+'"drivers_license_number": "', drivers_license_number, '", ',
+'"email_verified": "', email_verified, '", ',
+'"password_hash": "', password_hash, '", ',
+        '"forename": "', forename, '", ',
+        '"surname": "', surname, '", ',
+        '"birth_date": "', birth_date, '", ',
+        '"account_created": "', account_created, '", ',
+        '"account_last_accessed": "', account_last_accessed, '"',
+      '}'
+    )
+    INTO result
+    FROM clients
+    WHERE p_email = email
+    LIMIT 1;
+    
+    RETURN result;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION public.clients_get_user_info(p_email text) OWNER TO sniemcze;
+
+--
+-- Name: clients_remove_user(text); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION clients_remove_user(p_email text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p_email IS NULL OR (LENGTH(TRIM(p_email)) < 5) THEN
+    RAISE NOTICE 'clients_remove_user | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    DELETE FROM clients
+    WHERE email = p_email;
+
+    IF NOT FOUND THEN
+      RAISE NOTICE 'clients_remove_user | email does not exist: %', p_email;
+      RETURN FALSE;
+    END IF;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.clients_remove_user(p_email text) OWNER TO sniemcze;
+
+--
+-- Name: clients_user_authorized(text); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION clients_user_authorized(p_email text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p_email IS NULL OR (LENGTH(TRIM(p_email)) < 5) THEN
+    RAISE NOTICE 'clients_user_authorized | Invalid email';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    UPDATE clients
+    SET account_last_accessed = CURRENT_TIMESTAMP
+    WHERE email = p_email;
+
+    IF NOT FOUND THEN
+      RAISE NOTICE 'clients_user_authorized | email does not exist: %', p_email;
+      RETURN FALSE;
+    END IF;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.clients_user_authorized(p_email text) OWNER TO sniemcze;
+
+--
+-- Name: create_rental(character, character, character, timestamp without time zone, numeric, numeric, text); Type: FUNCTION; Schema: public; Owner: pmlodkow
+--
+
+CREATE FUNCTION create_rental(p_rental_id character, p_client_id character, p_vehicle_id character, p_start_time timestamp without time zone, p_start_latitude numeric, p_start_longitude numeric, p_rental_type text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+  IF (p_rental_id IS NULL) OR (LENGTH(p_rental_id) != 32) then
+    RAISE NOTICE 'create_rental | Invalid rental_id';
+    RETURN false;
+  END IF;
+
+  IF (p_client_id IS NULL) OR (LENGTH(p_client_id) != 32) then
+    RAISE NOTICE 'create_rental | Invalid client_id';
+    RETURN false;
+  END IF;
+
+  IF (p_vehicle_id IS NULL) OR (LENGTH(p_vehicle_id) != 32) then
+    RAISE NOTICE 'create_rental | Invalid vehicle_id';
+    RETURN false;
+  END IF;
+
+  IF (p_start_time IS NULL) OR (p_start_latitude IS NULL) OR (p_start_longitude IS NULL) OR (p_rental_type IS NULL) then
+    RAISE NOTICE 'create_rental | Parameters cannot be null';
+    RETURN false;
+  END IF;
+  
+  IF (SELECT current_renter_id FROM vehicles WHERE vehicle_id = p_vehicle_id) IS NOT NULL THEN 
+    RAISE NOTICE 'create_rental | Vehicle is currently occupied';
+    RETURN FALSE;
+  END IF;
+  
+  BEGIN
+    IF (SELECT assign_renter(p_vehicle_id, p_client_id)) = FALSE THEN
+      RAISE NOTICE 'create_rental | Couldn''t reserve vehicle';
+      RETURN FALSE;
+    END IF;
+
+    INSERT INTO rentals (
+      rental_id,
+      client_id,
+      vehicle_id,
+      start_time,
+      start_latitude,
+      start_longitude,
+      rental_type,
+      charge
+    ) VALUES (
+      p_rental_id,
+      p_client_id,
+      p_vehicle_id,
+      p_start_time,
+      p_start_latitude,
+      p_start_longitude,
+      p_rental_type,
+      0
+    );
+  END;
+RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.create_rental(p_rental_id character, p_client_id character, p_vehicle_id character, p_start_time timestamp without time zone, p_start_latitude numeric, p_start_longitude numeric, p_rental_type text) OWNER TO pmlodkow;
+
+--
+-- Name: end_rental(character, timestamp without time zone, numeric, numeric, numeric); Type: FUNCTION; Schema: public; Owner: pmlodkow
+--
+
+CREATE FUNCTION end_rental(p_rental_id character, p_end_time timestamp without time zone, p_end_latitude numeric, p_end_longitude numeric, p_charge numeric) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF EXISTS(SELECT * FROM rentals WHERE rental_id = p_rental_id) THEN
+    RAISE NOTICE 'end_rental | no record with stated rental_id exists';
+    RETURN FALSE;
+  END IF;
+
+  IF (SELECT end_time FROM rentals WHERE rental_id = p_rental_id) IS NOT NULL THEN
+    RAISE NOTICE 'end_rental | record with stated rental_id has already ended';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_charge IS NULL) OR (p_charge <= 0) THEN
+    RAISE NOTICE 'end_rental | charge cannot be null or less or equal to 0';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_end_time IS NULL) OR (p_end_time <= (SELECT start_time FROM rentals WHERE rental_id = p_rental_id)) THEN
+    RAISE NOTICE 'end_rental | end_time cannot be null or earlier or equal to start_time';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    
+    SELECT remove_renter((SELECT vehicle_id FROM rentals WHERE rental_id = p_rental_id));
+    
+    UPDATE rentals
+    SET
+      end_time = p_end_time,
+      end_latitude = p_end_latitude,
+      end_longitude = p_end_longitude,
+      charge = p_charge
+    WHERE rental_id = p_rental_id;
+  END;
+RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.end_rental(p_rental_id character, p_end_time timestamp without time zone, p_end_latitude numeric, p_end_longitude numeric, p_charge numeric) OWNER TO pmlodkow;
+
+--
+-- Name: get_rental_details(character); Type: FUNCTION; Schema: public; Owner: pmlodkow
+--
+
+CREATE FUNCTION get_rental_details(p_rental_id character) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result TEXT;
+BEGIN
+    IF p_rental_id IS NULL THEN
+        RAISE NOTICE 'get_rental_details | Rental ID cannot be NULL';
+        RETURN NULL;
+    END IF;
+
+    SELECT CONCAT(
+      '{',
+        '"rental_id": "', rental_id, '", ',
+        '"client_id": "', client_id, '", ',
+        '"vehicle_id": "', vehicle_id, '", ',
+        '"start_time": "', start_time, '", ',
+        '"start_latitude": "', start_latitude, '", ',
+        '"start_longitude": "', start_longitude, '", ',
+        '"end_time": "', COALESCE(end_time::TEXT, 'null'), '", ',
+        '"end_latitude": "', COALESCE(end_latitude::TEXT, 'null'), '", ',
+        '"end_longitude": "', COALESCE(end_longitude::TEXT, 'null'), '", ',
+        '"rental_type": "', rental_type, '", ',
+        '"charge": "', charge, '", ',
+        '"is_paid": "', is_paid, '"',
+      '}'
+    ) INTO result
+    FROM rentals
+    WHERE rental_id = p_rental_id
+    LIMIT 1;
+
+    IF result IS NULL THEN
+        RAISE NOTICE 'get_rental_details | Rental not found';
+        RETURN NULL;
+    END IF;
+
+    RETURN result;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_rental_details(p_rental_id character) OWNER TO pmlodkow;
+
+--
+-- Name: list_active_rentals(); Type: FUNCTION; Schema: public; Owner: pmlodkow
+--
+
+CREATE FUNCTION list_active_rentals() RETURNS TABLE(rental_id character, client_id character, vehicle_id character, start_time timestamp without time zone, start_latitude numeric, start_longitude numeric, rental_type text, charge numeric, is_paid boolean)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result TEXT;
+BEGIN
+    RETURN QUERY
+    SELECT r.rental_id, r.client_id, r.vehicle_id, r.start_time, r.start_latitude, r.start_longitude,
+    r.rental_type, r.charge, r.is_paid
+    FROM rentals r
+    WHERE end_time IS NULL;
+END;
+$$;
+
+
+ALTER FUNCTION public.list_active_rentals() OWNER TO pmlodkow;
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
-
---
--- Name: clients; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
---
-
-CREATE TABLE clients (
-    client_id character(32) NOT NULL,
-    email text NOT NULL,
-    drivers_license_number text NOT NULL,
-    email_verified boolean NOT NULL,
-    password_hash text NOT NULL,
-    forename text NOT NULL,
-    surname text NOT NULL,
-    birth_date date NOT NULL,
-    account_created timestamp without time zone NOT NULL,
-    account_last_accessed timestamp without time zone NOT NULL
-);
-
-
-ALTER TABLE public.clients OWNER TO pmlodkow;
 
 --
 -- Name: rentals; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
@@ -70,6 +472,589 @@ CREATE TABLE rentals (
 
 
 ALTER TABLE public.rentals OWNER TO pmlodkow;
+
+--
+-- Name: list_rentals_by_client(character); Type: FUNCTION; Schema: public; Owner: pmlodkow
+--
+
+CREATE FUNCTION list_rentals_by_client(p_client_id character) RETURNS SETOF rentals
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result TEXT;
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM rentals
+    WHERE client_id = p_client_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.list_rentals_by_client(p_client_id character) OWNER TO pmlodkow;
+
+--
+-- Name: mark_rental_as_paid(character); Type: FUNCTION; Schema: public; Owner: pmlodkow
+--
+
+CREATE FUNCTION mark_rental_as_paid(p_rental_id character) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF EXISTS(SELECT * FROM rentals WHERE rental_id = p_rental_id) THEN
+    RAISE NOTICE 'mark_rental_as_paid | no record with stated rental_id exists';
+    RETURN FALSE;
+  END IF;
+  
+  IF (SELECT is_paid FROM rentals WHERE rental_id = p_rental_id) != 0 THEN
+    RAISE NOTICE 'mark_rental_as_paid | record with stated rental_id has already been marked as paid';
+    RETURN FALSE;
+  END IF;
+  
+  BEGIN
+    UPDATE rentals
+    SET 
+      is_paid = TRUE
+    WHERE rental_id = p_rental_id;
+  END;
+RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.mark_rental_as_paid(p_rental_id character) OWNER TO pmlodkow;
+
+--
+-- Name: vehicle_models_add_vehicle_model(character varying, text, text, numeric, numeric, numeric, numeric); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicle_models_add_vehicle_model(p_model_id character varying, p_brand_name text, p_model_name text, p_price_per_day numeric, p_price_for_no_limits numeric, p_price_per_minute numeric, p_price_per_kilometer numeric) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+  IF (p_model_id IS NULL) OR (LENGTH(p_model_id) != 32) THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | Invalid model_id';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_brand_name IS NULL) OR (LENGTH(p_brand_name) < 2) THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | Invalid brand name';
+    RETURN FALSE;
+  END IF;
+  
+  IF (p_price_per_day IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | Invalid price per day';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_price_for_no_limits IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | Invalid price for no limits';
+    RETURN FALSE;
+  END IF;
+    
+  IF (p_price_per_minute IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | Invalid price per minute';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_price_per_kilometer IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | Invalid price per kilometer';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    INSERT INTO vehicle_models (
+      model_id,
+      brand_name,
+      model_name,
+      price_per_day,
+      price_for_no_limits,
+      price_per_minute,
+      price_per_kilometer,
+      date_created,
+      date_last_updated
+    ) VALUES (
+      p_model_id,
+      p_brand_name,
+      p_model_name,
+      p_price_per_day,
+      p_price_for_no_limits,
+      p_price_per_minute,
+      p_price_per_kilometer,
+      CURRENT_TIMESTAMP, 
+      CURRENT_TIMESTAMP  
+    );
+  EXCEPTION WHEN unique_violation THEN
+    RAISE NOTICE 'vehicle_models_add_vehicle_model | record for this model already exists: %', p_model_id;
+    RETURN FALSE;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicle_models_add_vehicle_model(p_model_id character varying, p_brand_name text, p_model_name text, p_price_per_day numeric, p_price_for_no_limits numeric, p_price_per_minute numeric, p_price_per_kilometer numeric) OWNER TO sniemcze;
+
+--
+-- Name: vehicle_models_delete_vehicle_model(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicle_models_delete_vehicle_model(p_model_id character varying) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p_model_id IS NULL THEN
+    RAISE NOTICE 'vehicle_models_delete_vehicle_model | Invalid model ID';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    DELETE FROM vehicle_models
+    WHERE model_id = p_model_id;
+
+    IF NOT FOUND THEN
+      RAISE NOTICE 'vehicle_models_delete_vehicle_model | model ID does not exist: %', p_model_id;
+      RETURN FALSE;
+    END IF;
+  END;
+  
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicle_models_delete_vehicle_model(p_model_id character varying) OWNER TO sniemcze;
+
+--
+-- Name: vehicle_models_get_vehicle_model_info(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicle_models_get_vehicle_model_info(p_model_id character varying) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result TEXT;
+BEGIN
+  IF p_model_id IS NULL OR (LENGTH(TRIM(p_model_id)) != 32) THEN
+    RAISE NOTICE 'vehicle_models_get_vehicle_model_info | Invalid model ID';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    SELECT CONCAT(
+      '{',
+        '"model_id": "', model_id, '", ',
+        '"brand_name": "', brand_name, '", ',
+'"model_name": "', model_name, '", ',
+'"price_per_day": "', price_per_day, '", ',
+'"price_for_no_limits": "', price_for_no_limits, '", ',
+'"price_per_minute": "', price_per_minute, '", ',
+        '"price_per_kilometer": "', price_per_kilometer, '", ',
+        '"date_created": "', date_created, '", ',
+        '"date_last_updated": "', date_last_updated, '"',
+      '}'
+    )
+    INTO result
+    FROM vehicle_models
+    WHERE model_id = p_model_id
+    LIMIT 1;
+    
+    RETURN result;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicle_models_get_vehicle_model_info(p_model_id character varying) OWNER TO sniemcze;
+
+--
+-- Name: vehicle_models_update_vehicle_model(character varying, text, text, numeric, numeric, numeric, numeric); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicle_models_update_vehicle_model(p_model_id character varying, p_brand_name text, p_model_name text, p_price_per_day numeric, p_price_for_no_limits numeric, p_price_per_minute numeric, p_price_per_kilometer numeric) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF (p_model_id IS NULL) OR (LENGTH(p_model_id) != 32) THEN
+    RAISE NOTICE 'vehicle_models_update_vehicle_model | Invalid model_id';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_brand_name IS NULL) OR (LENGTH(p_brand_name) < 2) THEN
+    RAISE NOTICE 'vehicle_models_update_vehicle_model | Invalid brand name';
+    RETURN FALSE;
+  END IF;
+  
+  IF (p_price_per_day IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_update_vehicle_model | Invalid price per day';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_price_for_no_limits IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_update_vehicle_model | Invalid price for no limits';
+    RETURN FALSE;
+  END IF;
+    
+  IF (p_price_per_minute IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_update_vehicle_model | Invalid price per minute';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_price_per_kilometer IS NULL) THEN
+    RAISE NOTICE 'vehicle_models_update_vehicle_model | Invalid price per kilometer';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    UPDATE vehicle_models 
+    SET
+      brand_name = p_brand_name,
+      model_name = p_model_name,
+      price_per_day = p_price_per_day,
+      price_for_no_limits = p_price_for_no_limits,
+      price_per_minute = p_price_per_minute,
+      price_per_kilometer = p_price_per_kilometer,
+      date_last_updated = CURRENT_DATE
+    WHERE model_id = p_model_id;
+    
+    IF NOT FOUND THEN
+      RAISE NOTICE 'vehicle_models_update_vehicle_model | Model ID not found: %', p_model_id;
+      RETURN FALSE;
+    END IF;
+  END;
+  
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicle_models_update_vehicle_model(p_model_id character varying, p_brand_name text, p_model_name text, p_price_per_day numeric, p_price_for_no_limits numeric, p_price_per_minute numeric, p_price_per_kilometer numeric) OWNER TO sniemcze;
+
+--
+-- Name: vehicles_add_vehicle(character varying, character varying, text, text, text, numeric, numeric, integer); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicles_add_vehicle(p_vehicle_id character varying, p_model_id character varying, p_vehicle_color text, p_license_plate text, p_condition text, p_latitude numeric, p_longitude numeric, p_mileage integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+  IF (p_vehicle_id IS NULL) OR (LENGTH(p_vehicle_id) != 32) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid vehicle ID';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_model_id IS NULL) OR (LENGTH(p_model_id) != 32) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid model ID';
+    RETURN FALSE;
+  END IF;
+  
+  IF (p_vehicle_color IS NULL) OR (LENGTH(p_vehicle_color) < 2) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid vehicle color';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_license_plate IS NULL) OR (LENGTH(p_license_plate) < 1) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid license plate';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_condition IS NULL) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid condition';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_latitude IS NULL) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid latitude';
+    RETURN FALSE;
+  END IF;
+  
+  IF (p_longitude IS NULL) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid longitude';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_mileage IS NULL) OR (p_mileage < 0) THEN
+    RAISE NOTICE 'vehicles_add_vehicle | Invalid mileage';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    IF EXISTS (
+      SELECT 1
+      FROM vehicle_models
+      WHERE model_id = p_model_id  
+    ) 
+    THEN
+      BEGIN
+        INSERT INTO vehicles (
+          vehicle_id, 
+          model_id, 
+          current_renter_id, 
+          vehicle_color, 
+          license_plate, 
+          condition, 
+          latitude, 
+          longitude, 
+          mileage, 
+          record_created, 
+          last_rented, 
+          last_renter_id
+        ) VALUES (
+          p_vehicle_id,
+          p_model_id,
+          NULL, 
+          p_vehicle_color,
+          p_license_plate,
+          p_condition,
+          p_latitude,
+          p_longitude,
+          p_mileage,
+          CURRENT_DATE,
+          NULL,
+          NULL
+        );
+      EXCEPTION WHEN unique_violation THEN
+        RAISE NOTICE 'vehicles_add_vehicle | given vehicle ID already exists';
+        RETURN FALSE;
+      END;
+    ELSE
+      RAISE NOTICE 'vehicles_add_vehicle | given model ID does not exist: %', p_model_id;
+      RETURN FALSE;
+    END IF; 
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicles_add_vehicle(p_vehicle_id character varying, p_model_id character varying, p_vehicle_color text, p_license_plate text, p_condition text, p_latitude numeric, p_longitude numeric, p_mileage integer) OWNER TO sniemcze;
+
+--
+-- Name: vehicles_assign_renter(character varying, character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicles_assign_renter(p_vehicle_id character varying, p_current_renter_id character varying) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF (p_vehicle_id IS NULL) OR (LENGTH(p_vehicle_id) != 32) THEN
+    RAISE NOTICE 'vehicles_assign_renter | Invalid vehicle ID';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_current_renter_id IS NULL) OR (LENGTH(p_current_renter_id) != 32) THEN
+    RAISE NOTICE 'vehicles_assign_renter | Invalid renter ID';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    IF EXISTS (
+      SELECT 1
+      FROM clients
+      WHERE client_id = p_current_renter_id
+    ) 
+    THEN 
+      BEGIN
+        UPDATE vehicles
+        SET
+          current_renter_id = p_current_renter_id,
+          last_rented = CURRENT_TIMESTAMP
+        WHERE vehicle_id = p_vehicle_id;
+      
+        IF NOT FOUND THEN
+          RAISE NOTICE 'vehicles_assign_renter | Given vehicle ID does not exist: %', p_vehicle_id;
+          RETURN FALSE;
+        END IF;
+
+      END;
+    ELSE
+      RAISE NOTICE 'vehicles_assign_renter | Given renter (client) ID does not exist: %', p_current_renter_id;
+      RETURN FALSE;
+    END IF;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicles_assign_renter(p_vehicle_id character varying, p_current_renter_id character varying) OWNER TO sniemcze;
+
+--
+-- Name: vehicles_get_vehicle_info(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicles_get_vehicle_info(p_vehicle_id character varying) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  result TEXT;
+BEGIN
+  IF (p_vehicle_id IS NULL) OR (LENGTH(p_vehicle_id) != 32) THEN
+    RAISE NOTICE 'vehicles_get_vehicle_info | Invalid vehicle ID';
+    RETURN '';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM vehicles
+    WHERE vehicle_id = p_vehicle_id
+  )
+  THEN
+    RAISE NOTICE 'vehicles_get_vehicle_info | Given vehicle ID does not exist: %', p_vehicle_id;
+    RETURN '';
+  END IF;
+
+  BEGIN
+    SELECT CONCAT(
+      '{',
+        '"vehicle_d": "', vehicle_id, '", ',
+        '"model_id": "', model_id, '", ',
+'"current_renter_id": "', current_renter_id, '", ',
+'"vehicle_color": "', vehicle_color, '", ',
+'"license_plate": "', license_plate, '", ',
+'"condition": "', condition, '", ',
+        '"latitude": "', latitude, '", ',
+        '"longitude": "', longitude, '", ',
+        '"mileage": "', mileage, '", ',
+        '"record_created": "', record_created, '", ',
+        '"last_rented": "', last_rented, '", ',
+        '"last_renter_id": "', last_renter_id, '"',
+      '}'
+    )
+    INTO result
+    FROM vehicles
+    WHERE vehicle_id = p_vehicle_id
+    LIMIT 1;
+    
+    RETURN result;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicles_get_vehicle_info(p_vehicle_id character varying) OWNER TO sniemcze;
+
+--
+-- Name: vehicles_remove_renter(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicles_remove_renter(p_vehicle_id character varying) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF (p_vehicle_id IS NULL) OR (LENGTH(p_vehicle_id) != 32) THEN
+    RAISE NOTICE 'vehicles_remove_renter | Invalid vehicle ID';
+    RETURN FALSE;
+  END IF;
+  
+  BEGIN
+    IF EXISTS (
+      SELECT 1
+      FROM vehicles
+      WHERE vehicle_id = p_vehicle_id
+    )
+    THEN
+      BEGIN
+        UPDATE vehicles
+        SET 
+          last_renter_id = current_renter_id,
+          current_renter_id = NULL,
+          last_rented = CURRENT_TIMESTAMP
+        WHERE vehicle_id = p_vehicle_id;
+      END;
+    ELSE
+      BEGIN
+        RAISE NOTICE 'vehicles_remove_renter | Given vehicle ID does not exist: %', p_vehicle_id;
+        RETURN FALSE;
+      END;
+    END IF;
+  END;
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicles_remove_renter(p_vehicle_id character varying) OWNER TO sniemcze;
+
+--
+-- Name: vehicles_update_vehicle_status(character varying, numeric, numeric, text, integer); Type: FUNCTION; Schema: public; Owner: sniemcze
+--
+
+CREATE FUNCTION vehicles_update_vehicle_status(p_vehicle_id character varying, p_latitude numeric, p_longitude numeric, p_condition text, p_mileage integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF (p_vehicle_id IS NULL) OR (LENGTH(p_vehicle_id) != 32) THEN
+    RAISE NOTICE 'vehicles_update_vehicle_status | Invalid vehicle ID';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_latitude IS NULL) THEN
+    RAISE NOTICE 'vehicles_update_vehicle_status | Invalid latitude';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_longitude IS NULL) THEN    
+    RAISE NOTICE 'vehicles_update_vehicle_status | Invalid longitude';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_condition IS NULL) THEN
+    RAISE NOTICE 'vehicles_update_vehicle_status | Invalid condition';
+    RETURN FALSE;
+  END IF;
+
+  IF (p_mileage IS NULL) OR (p_mileage < 0) THEN
+    RAISE NOTICE 'vehicles_update_vehicle_status | Invalid mileage';
+    RETURN FALSE;
+  END IF;
+
+  BEGIN
+    UPDATE vehicles
+    SET
+      latitude = p_latitude,
+      longitude = p_longitude,
+      condition = p_condition,
+      mileage = p_mileage
+    WHERE vehicle_id = p_vehicle_id;
+
+    IF NOT FOUND THEN
+      RAISE NOTICE 'vehicles_update_vehicle_status | vehicle ID does not exist %', p_vehicle_id;
+      RETURN FALSE;
+    END IF;
+  END;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION public.vehicles_update_vehicle_status(p_vehicle_id character varying, p_latitude numeric, p_longitude numeric, p_condition text, p_mileage integer) OWNER TO sniemcze;
+
+--
+-- Name: clients; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
+--
+
+CREATE TABLE clients (
+    client_id character(32) NOT NULL,
+    email text NOT NULL,
+    drivers_license_number text NOT NULL,
+    email_verified boolean NOT NULL,
+    password_hash text NOT NULL,
+    forename text NOT NULL,
+    surname text NOT NULL,
+    birth_date date NOT NULL,
+    account_created timestamp without time zone NOT NULL,
+    account_last_accessed timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.clients OWNER TO pmlodkow;
 
 --
 -- Name: vehicle_models; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
@@ -120,7 +1105,8 @@ ALTER TABLE public.vehicles OWNER TO pmlodkow;
 COPY clients (client_id, email, drivers_license_number, email_verified, password_hash, forename, surname, birth_date, account_created, account_last_accessed) FROM stdin;
 123e4567e89b12d3a456426655440005	john.doe@example.com	D12345678	t	$2a$12$examplehash1234567890abcd	John	Doe	1990-05-15	2025-01-01 08:00:00	2025-01-17 10:00:00
 123e4567e89b12d3a456426655440006	jane.smith@example.com	S87654321	t	$2a$12$examplehash0987654321zyxw	Jane	Smith	1985-07-20	2025-01-02 09:00:00	2025-01-16 14:00:00
-123e4567e89b12d3a456426655440007	alex.jones@example.com	J56789012	f	$2a$12$anotherexamplehash1234567	Alex	Jones	1992-03-10	2025-01-03 10:30:00	2025-01-15 16:45:00
+1234567890abcdef                	johhnydoey@example.com	DL123456	f	hashed_password	John	Doe	1990-01-01	2025-01-24 20:41:33.946376	2025-01-24 20:41:33.946376
+123e4567e89b12d3a456426655440007	alex.jones@example.com	J56789012	f	$2a$12$anotherexamplehash1234567	Alex	Jones	1992-03-10	2025-01-03 10:30:00	2025-01-24 20:52:59.91167
 \.
 
 
@@ -132,6 +1118,7 @@ COPY rentals (rental_id, client_id, vehicle_id, start_time, start_latitude, star
 rental_001                      	123e4567e89b12d3a456426655440005	123e4567e89b12d3a456426655440000	2025-01-17 09:00:00	40.712776	-74.005974	2025-01-17 11:00:00	40.712776	-74.005974	hourly	30.00	t
 rental_002                      	123e4567e89b12d3a456426655440006	123e4567e89b12d3a456426655440001	2025-01-16 08:00:00	34.052235	-118.243683	2025-01-17 08:00:00	34.052235	-118.243683	daily	100.00	f
 rental_003                      	123e4567e89b12d3a456426655440007	123e4567e89b12d3a456426655440003	2025-01-17 12:00:00	40.730610	-73.935242	2025-01-17 13:30:00	40.730610	-73.935242	hourly	45.00	t
+123e4567e89b12d3a456426614174000	123e4567e89b12d3a456426655440005	123e4567e89b12d3a456426655440000	2025-02-02 10:00:00	37.774929	-122.419416	\N	\N	\N	hourly	0.00	f
 \.
 
 
@@ -156,8 +1143,9 @@ COPY vehicles (vehicle_id, model_id, current_renter_id, vehicle_color, license_p
 123e4567e89b12d3a456426655440000	123e4567e89b12d3a456426655440011	\N	Red	ABC1234	Excellent	40.712776	-74.005974	12000	2025-01-10	2025-01-15 08:30:00	123e4567e89b12d3a456426655440005
 123e4567e89b12d3a456426655440001	123e4567e89b12d3a456426655440011	123e4567e89b12d3a456426655440006	Blue	DEF5678	Good	34.052235	-118.243683	8000	2025-01-08	2025-01-16 09:00:00	123e4567e89b12d3a456426655440006
 123e4567e89b12d3a456426655440002	123e4567e89b12d3a456426655440011	\N	White	GHI9012	Fair	51.507351	-0.127758	15000	2025-01-05	\N	\N
-123e4567e89b12d3a456426655440003	123e4567e89b12d3a456426655440011	123e4567e89b12d3a456426655440007	Black	JKL3456	Very Good	40.730610	-73.935242	5000	2025-01-06	2025-01-17 14:45:00	123e4567e89b12d3a456426655440007
 123e4567e89b12d3a456426655440004	123e4567e89b12d3a456426655440011	\N	Silver	MNO7890	Good	34.101235	-118.308846	10000	2025-01-09	\N	\N
+123e4567e89b12d3a456426655440003	123e4567e89b12d3a456426655440011	123e4567e89b12d3a456426655440007	Black	JKL3456	wankin	33.333300	-11.111100	9999999	2025-01-06	2025-01-17 14:45:00	123e4567e89b12d3a456426655440007
+123e4567e89b12d3a456426655440111	123e4567e89b12d3a456426655440014	\N	szmozooo	K1BOLO	fine as shit	99.999000	99.999000	2137	2025-01-25	2025-01-25 13:13:31.985604	123e4567e89b12d3a456426655440007
 \.
 
 
@@ -260,17 +1248,6 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
--- Name: clients; Type: ACL; Schema: public; Owner: pmlodkow
---
-
-REVOKE ALL ON TABLE clients FROM PUBLIC;
-REVOKE ALL ON TABLE clients FROM pmlodkow;
-GRANT ALL ON TABLE clients TO pmlodkow;
-GRANT ALL ON TABLE clients TO sniemcze;
-GRANT ALL ON TABLE clients TO abrzykcy;
-
-
---
 -- Name: rentals; Type: ACL; Schema: public; Owner: pmlodkow
 --
 
@@ -279,6 +1256,17 @@ REVOKE ALL ON TABLE rentals FROM pmlodkow;
 GRANT ALL ON TABLE rentals TO pmlodkow;
 GRANT ALL ON TABLE rentals TO sniemcze;
 GRANT ALL ON TABLE rentals TO abrzykcy;
+
+
+--
+-- Name: clients; Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+REVOKE ALL ON TABLE clients FROM PUBLIC;
+REVOKE ALL ON TABLE clients FROM pmlodkow;
+GRANT ALL ON TABLE clients TO pmlodkow;
+GRANT ALL ON TABLE clients TO sniemcze;
+GRANT ALL ON TABLE clients TO abrzykcy;
 
 
 --
