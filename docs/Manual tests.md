@@ -357,7 +357,7 @@ SELECT vehicles_update_vehicle_status(
   33.3333,
   -11.1111,
   'wankin',
-  9999999999
+  999
 ); -- OK
 
 SELECT vehicles_update_vehicle_status(
@@ -365,7 +365,7 @@ SELECT vehicles_update_vehicle_status(
   33.3333,
   -11.1111,
   'wankin',
-  9999999999
+  999
 ); -- not OK
 
 SELECT vehicles_update_vehicle_status(
@@ -373,14 +373,14 @@ SELECT vehicles_update_vehicle_status(
   33.3333,
   -11.1111,
   'wankin',
-  9999999999
+  999
 ); -- not OK
 
 SELECT vehicles_update_vehicle_status(
   '123e4567e89b12d3a456426655440003',
   -11.1111,
   'wankin',
-  9999999999
+  999
 ); -- not OK
 
 SELECT vehicles_update_vehicle_status(
