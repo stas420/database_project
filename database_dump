@@ -95,9 +95,6 @@ BEGIN
 END;
 $_$;
 
-
-ALTER FUNCTION public.clients_add_user(p_client_id text, p_email text, p_forename text, p_surname text, p_drivers_license_number text, p_password_hash text, p_birth_date date) OWNER TO sniemcze;
-
 --
 -- Name: clients_email_not_verified(text); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -127,8 +124,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.clients_email_not_verified(p_email text) OWNER TO sniemcze;
-
 --
 -- Name: clients_email_verified(text); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -157,8 +152,6 @@ BEGIN
 END;
 $$;
 
-
-ALTER FUNCTION public.clients_email_verified(p_email text) OWNER TO sniemcze;
 
 --
 -- Name: clients_get_user_info(text); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -200,9 +193,6 @@ BEGIN
 END;
 $$;
 
-
-ALTER FUNCTION public.clients_get_user_info(p_email text) OWNER TO sniemcze;
-
 --
 -- Name: clients_remove_user(text); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -231,8 +221,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.clients_remove_user(p_email text) OWNER TO sniemcze;
-
 --
 -- Name: clients_user_authorized(text); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -260,9 +248,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
-
-ALTER FUNCTION public.clients_user_authorized(p_email text) OWNER TO sniemcze;
 
 --
 -- Name: create_rental(character, character, character, timestamp without time zone, numeric, numeric, text); Type: FUNCTION; Schema: public; Owner: pmlodkow
@@ -328,9 +313,6 @@ RETURN TRUE;
 END;
 $$;
 
-
-ALTER FUNCTION public.create_rental(p_rental_id character, p_client_id character, p_vehicle_id character, p_start_time timestamp without time zone, p_start_latitude numeric, p_start_longitude numeric, p_rental_type text) OWNER TO pmlodkow;
-
 --
 -- Name: end_rental(character, timestamp without time zone, numeric, numeric, numeric); Type: FUNCTION; Schema: public; Owner: pmlodkow
 --
@@ -339,7 +321,7 @@ CREATE FUNCTION end_rental(p_rental_id character, p_end_time timestamp without t
     LANGUAGE plpgsql
     AS $$
 BEGIN
-  IF EXISTS(SELECT * FROM rentals WHERE rental_id = p_rental_id) THEN
+  IF NOT EXISTS(SELECT * FROM rentals WHERE rental_id = p_rental_id) THEN
     RAISE NOTICE 'end_rental | no record with stated rental_id exists';
     RETURN FALSE;
   END IF;
@@ -360,9 +342,9 @@ BEGIN
   END IF;
 
   BEGIN
-    
+
     SELECT remove_renter((SELECT vehicle_id FROM rentals WHERE rental_id = p_rental_id));
-    
+
     UPDATE rentals
     SET
       end_time = p_end_time,
@@ -374,9 +356,6 @@ BEGIN
 RETURN TRUE;
 END;
 $$;
-
-
-ALTER FUNCTION public.end_rental(p_rental_id character, p_end_time timestamp without time zone, p_end_latitude numeric, p_end_longitude numeric, p_charge numeric) OWNER TO pmlodkow;
 
 --
 -- Name: get_rental_details(character); Type: FUNCTION; Schema: public; Owner: pmlodkow
@@ -422,9 +401,6 @@ BEGIN
 END;
 $$;
 
-
-ALTER FUNCTION public.get_rental_details(p_rental_id character) OWNER TO pmlodkow;
-
 --
 -- Name: list_active_rentals(); Type: FUNCTION; Schema: public; Owner: pmlodkow
 --
@@ -442,9 +418,6 @@ BEGIN
     WHERE end_time IS NULL;
 END;
 $$;
-
-
-ALTER FUNCTION public.list_active_rentals() OWNER TO pmlodkow;
 
 SET default_tablespace = '';
 
@@ -470,9 +443,6 @@ CREATE TABLE rentals (
     CONSTRAINT rentals_charge_check CHECK ((charge >= (0)::numeric))
 );
 
-
-ALTER TABLE public.rentals OWNER TO pmlodkow;
-
 --
 -- Name: list_rentals_by_client(character); Type: FUNCTION; Schema: public; Owner: pmlodkow
 --
@@ -480,8 +450,6 @@ ALTER TABLE public.rentals OWNER TO pmlodkow;
 CREATE FUNCTION list_rentals_by_client(p_client_id character) RETURNS SETOF rentals
     LANGUAGE plpgsql
     AS $$
-DECLARE
-  result TEXT;
 BEGIN
     RETURN QUERY
     SELECT *
@@ -491,8 +459,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.list_rentals_by_client(p_client_id character) OWNER TO pmlodkow;
-
 --
 -- Name: mark_rental_as_paid(character); Type: FUNCTION; Schema: public; Owner: pmlodkow
 --
@@ -501,19 +467,19 @@ CREATE FUNCTION mark_rental_as_paid(p_rental_id character) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
-  IF EXISTS(SELECT * FROM rentals WHERE rental_id = p_rental_id) THEN
+  IF NOT EXISTS(SELECT * FROM rentals WHERE rental_id = p_rental_id) THEN
     RAISE NOTICE 'mark_rental_as_paid | no record with stated rental_id exists';
     RETURN FALSE;
   END IF;
-  
+
   IF (SELECT is_paid FROM rentals WHERE rental_id = p_rental_id) != 0 THEN
     RAISE NOTICE 'mark_rental_as_paid | record with stated rental_id has already been marked as paid';
     RETURN FALSE;
   END IF;
-  
+
   BEGIN
     UPDATE rentals
-    SET 
+    SET
       is_paid = TRUE
     WHERE rental_id = p_rental_id;
   END;
@@ -521,8 +487,6 @@ RETURN TRUE;
 END;
 $$;
 
-
-ALTER FUNCTION public.mark_rental_as_paid(p_rental_id character) OWNER TO pmlodkow;
 
 --
 -- Name: vehicle_models_add_vehicle_model(character varying, text, text, numeric, numeric, numeric, numeric); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -595,8 +559,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.vehicle_models_add_vehicle_model(p_model_id character varying, p_brand_name text, p_model_name text, p_price_per_day numeric, p_price_for_no_limits numeric, p_price_per_minute numeric, p_price_per_kilometer numeric) OWNER TO sniemcze;
-
 --
 -- Name: vehicle_models_delete_vehicle_model(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -623,9 +585,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
-
-ALTER FUNCTION public.vehicle_models_delete_vehicle_model(p_model_id character varying) OWNER TO sniemcze;
 
 --
 -- Name: vehicle_models_get_vehicle_model_info(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -665,9 +624,6 @@ BEGIN
   END;
 END;
 $$;
-
-
-ALTER FUNCTION public.vehicle_models_get_vehicle_model_info(p_model_id character varying) OWNER TO sniemcze;
 
 --
 -- Name: vehicle_models_update_vehicle_model(character varying, text, text, numeric, numeric, numeric, numeric); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -728,9 +684,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
-
-ALTER FUNCTION public.vehicle_models_update_vehicle_model(p_model_id character varying, p_brand_name text, p_model_name text, p_price_per_day numeric, p_price_for_no_limits numeric, p_price_per_minute numeric, p_price_per_kilometer numeric) OWNER TO sniemcze;
 
 --
 -- Name: vehicles_add_vehicle(character varying, character varying, text, text, text, numeric, numeric, integer); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -830,9 +783,6 @@ BEGIN
 END;
 $$;
 
-
-ALTER FUNCTION public.vehicles_add_vehicle(p_vehicle_id character varying, p_model_id character varying, p_vehicle_color text, p_license_plate text, p_condition text, p_latitude numeric, p_longitude numeric, p_mileage integer) OWNER TO sniemcze;
-
 --
 -- Name: vehicles_assign_renter(character varying, character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -880,9 +830,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
-
-ALTER FUNCTION public.vehicles_assign_renter(p_vehicle_id character varying, p_current_renter_id character varying) OWNER TO sniemcze;
 
 --
 -- Name: vehicles_get_vehicle_info(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -936,9 +883,6 @@ BEGIN
 END;
 $$;
 
-
-ALTER FUNCTION public.vehicles_get_vehicle_info(p_vehicle_id character varying) OWNER TO sniemcze;
-
 --
 -- Name: vehicles_remove_renter(character varying); Type: FUNCTION; Schema: public; Owner: sniemcze
 --
@@ -977,9 +921,6 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
-
-
-ALTER FUNCTION public.vehicles_remove_renter(p_vehicle_id character varying) OWNER TO sniemcze;
 
 --
 -- Name: vehicles_update_vehicle_status(character varying, numeric, numeric, text, integer); Type: FUNCTION; Schema: public; Owner: sniemcze
@@ -1033,9 +974,6 @@ BEGIN
 END;
 $$;
 
-
-ALTER FUNCTION public.vehicles_update_vehicle_status(p_vehicle_id character varying, p_latitude numeric, p_longitude numeric, p_condition text, p_mileage integer) OWNER TO sniemcze;
-
 --
 -- Name: clients; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
 --
@@ -1054,8 +992,6 @@ CREATE TABLE clients (
 );
 
 
-ALTER TABLE public.clients OWNER TO pmlodkow;
-
 --
 -- Name: vehicle_models; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
 --
@@ -1071,9 +1007,6 @@ CREATE TABLE vehicle_models (
     date_created date NOT NULL,
     date_last_updated date NOT NULL
 );
-
-
-ALTER TABLE public.vehicle_models OWNER TO pmlodkow;
 
 --
 -- Name: vehicles; Type: TABLE; Schema: public; Owner: pmlodkow; Tablespace: 
@@ -1095,9 +1028,6 @@ CREATE TABLE vehicles (
     CONSTRAINT vehicles_mileage_check CHECK ((mileage >= 0))
 );
 
-
-ALTER TABLE public.vehicles OWNER TO pmlodkow;
-
 --
 -- Data for Name: clients; Type: TABLE DATA; Schema: public; Owner: pmlodkow
 --
@@ -1105,7 +1035,6 @@ ALTER TABLE public.vehicles OWNER TO pmlodkow;
 COPY clients (client_id, email, drivers_license_number, email_verified, password_hash, forename, surname, birth_date, account_created, account_last_accessed) FROM stdin;
 123e4567e89b12d3a456426655440005	john.doe@example.com	D12345678	t	$2a$12$examplehash1234567890abcd	John	Doe	1990-05-15	2025-01-01 08:00:00	2025-01-17 10:00:00
 123e4567e89b12d3a456426655440006	jane.smith@example.com	S87654321	t	$2a$12$examplehash0987654321zyxw	Jane	Smith	1985-07-20	2025-01-02 09:00:00	2025-01-16 14:00:00
-1234567890abcdef                	johhnydoey@example.com	DL123456	f	hashed_password	John	Doe	1990-01-01	2025-01-24 20:41:33.946376	2025-01-24 20:41:33.946376
 123e4567e89b12d3a456426655440007	alex.jones@example.com	J56789012	f	$2a$12$anotherexamplehash1234567	Alex	Jones	1992-03-10	2025-01-03 10:30:00	2025-01-24 20:52:59.91167
 \.
 
@@ -1119,6 +1048,7 @@ rental_001                      	123e4567e89b12d3a456426655440005	123e4567e89b12
 rental_002                      	123e4567e89b12d3a456426655440006	123e4567e89b12d3a456426655440001	2025-01-16 08:00:00	34.052235	-118.243683	2025-01-17 08:00:00	34.052235	-118.243683	daily	100.00	f
 rental_003                      	123e4567e89b12d3a456426655440007	123e4567e89b12d3a456426655440003	2025-01-17 12:00:00	40.730610	-73.935242	2025-01-17 13:30:00	40.730610	-73.935242	hourly	45.00	t
 123e4567e89b12d3a456426614174000	123e4567e89b12d3a456426655440005	123e4567e89b12d3a456426655440000	2025-02-02 10:00:00	37.774929	-122.419416	\N	\N	\N	hourly	0.00	f
+abcd1234efgh5678ijkl9012mnop3456	123e4567e89b12d3a456426655440006	123e4567e89b12d3a456426655440001	2024-02-01 08:30:00	40.712776	-74.005974	2024-02-01 09:15:00	40.730610	-73.935242	electric_scooter	15.75	t
 \.
 
 
@@ -1248,48 +1178,59 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
+-- Name: create_rental(character, character, character, timestamp without time zone, numeric, numeric, text); Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+REVOKE ALL ON FUNCTION create_rental(p_rental_id character, p_client_id character, p_vehicle_id character, p_start_time timestamp without time zone, p_start_latitude numeric, p_start_longitude numeric, p_rental_type text) TO PUBLIC;
+
+--
+-- Name: end_rental(character, timestamp without time zone, numeric, numeric, numeric); Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+GRANT ALL ON FUNCTION end_rental(p_rental_id character, p_end_time timestamp without time zone, p_end_latitude numeric, p_end_longitude numeric, p_charge numeric) TO PUBLIC;
+
+--
+-- Name: list_active_rentals(); Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+GRANT ALL ON FUNCTION list_active_rentals() TO PUBLIC;
+
+--
 -- Name: rentals; Type: ACL; Schema: public; Owner: pmlodkow
 --
 
-REVOKE ALL ON TABLE rentals FROM PUBLIC;
-REVOKE ALL ON TABLE rentals FROM pmlodkow;
-GRANT ALL ON TABLE rentals TO pmlodkow;
-GRANT ALL ON TABLE rentals TO sniemcze;
-GRANT ALL ON TABLE rentals TO abrzykcy;
+GRANT ALL ON TABLE rentals TO PUBLIC;
+
+--
+-- Name: list_rentals_by_client(character); Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+GRANT ALL ON FUNCTION list_rentals_by_client(p_client_id character) TO PUBLIC;
+
+--
+-- Name: mark_rental_as_paid(character); Type: ACL; Schema: public; Owner: pmlodkow
+--
+
+GRANT ALL ON FUNCTION mark_rental_as_paid(p_rental_id character) TO PUBLIC;
 
 
 --
 -- Name: clients; Type: ACL; Schema: public; Owner: pmlodkow
 --
 
-REVOKE ALL ON TABLE clients FROM PUBLIC;
-REVOKE ALL ON TABLE clients FROM pmlodkow;
-GRANT ALL ON TABLE clients TO pmlodkow;
-GRANT ALL ON TABLE clients TO sniemcze;
-GRANT ALL ON TABLE clients TO abrzykcy;
-
+GRANT ALL ON TABLE clients TO PUBLIC;
 
 --
 -- Name: vehicle_models; Type: ACL; Schema: public; Owner: pmlodkow
 --
 
-REVOKE ALL ON TABLE vehicle_models FROM PUBLIC;
-REVOKE ALL ON TABLE vehicle_models FROM pmlodkow;
-GRANT ALL ON TABLE vehicle_models TO pmlodkow;
-GRANT ALL ON TABLE vehicle_models TO abrzykcy;
-GRANT ALL ON TABLE vehicle_models TO sniemcze;
-
+GRANT ALL ON TABLE vehicle_models TO PUBLIC;
 
 --
 -- Name: vehicles; Type: ACL; Schema: public; Owner: pmlodkow
 --
 
-REVOKE ALL ON TABLE vehicles FROM PUBLIC;
-REVOKE ALL ON TABLE vehicles FROM pmlodkow;
-GRANT ALL ON TABLE vehicles TO pmlodkow;
-GRANT ALL ON TABLE vehicles TO sniemcze;
-GRANT ALL ON TABLE vehicles TO abrzykcy;
-
+GRANT ALL ON TABLE vehicles TO PUBLIC;
 
 --
 -- PostgreSQL database dump complete
